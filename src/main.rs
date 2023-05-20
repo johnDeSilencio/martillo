@@ -1,4 +1,6 @@
 use clap::{Parser, Subcommand};
+use serde::Deserialize;
+use std::fs;
 use std::path::PathBuf;
 use std::process::ExitCode;
 
@@ -64,23 +66,23 @@ fn main() -> ExitCode {
     exit_code
 }
 
-struct BongoSettings {
-    microphone_enabled: bool,
-    debounce_beat: u16,
-    freestyle_rhythms: Option<Vec<FreestyleRhythm>>,
-}
-
 const DEFAULT_BONGO_SETTINGS: BongoSettings = BongoSettings {
-    microphone_enabled: false,
-    debounce_beat: 100, // milliseconds
-    freestyle_rhythms: None,
+    global: GlobalConfig {
+        microphone_enabled: Some(false),
+        debounce_beat: Some(100), // milliseconds
+    },
+    freestyle: FreestyleConfig {
+        freestyle_rhythms: None,
+    },
 };
 
+#[derive(Deserialize)]
 struct FreestyleRhythm {
     character: char,
     beats: Vec<(BongoInput, Option<BeatDelay>)>,
 }
 
+#[derive(Deserialize)]
 enum BongoInput {
     BackLeftBongo,
     FrontLeftBongo,
@@ -90,14 +92,45 @@ enum BongoInput {
     ClapMicrophone,
 }
 
+#[derive(Deserialize)]
 struct BeatDelay(u8);
 
+#[derive(Deserialize)]
+struct BongoSettings {
+    global: GlobalConfig,
+    freestyle: FreestyleConfig,
+}
+
+#[derive(Deserialize)]
+struct GlobalConfig {
+    microphone_enabled: Option<bool>,
+    debounce_beat: Option<u16>,
+}
+
+#[derive(Deserialize)]
+struct FreestyleConfig {
+    freestyle_rhythms: Option<Vec<FreestyleRhythm>>,
+}
+
 fn parse(file: &PathBuf) -> Option<BongoSettings> {
-    return todo!();
-    file.exists() && file.to_str().unwrap() == "mappings.toml";
+    let file_name = file.file_name()?;
+
+    println!("{:?}", file_name);
+
+    if !file.exists() || file_name != "mappings.toml" {
+        return None;
+    }
+
+    // Read in the data from the settings file
+    let settings_data = fs::read_to_string(file).ok()?;
+    println!("{:?}", settings_data);
+
+    let parsed_settings: BongoSettings = toml::from_str(&settings_data).ok()?;
+
+    Some(parsed_settings)
 }
 
 fn apply(settings: &BongoSettings) {
-    println!("{:?}", settings.microphone_enabled);
-    println!("{:?}", settings.debounce_beat);
+    println!("{:?}", settings.global.microphone_enabled);
+    println!("{:?}", settings.global.debounce_beat);
 }
