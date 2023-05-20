@@ -81,7 +81,7 @@ defined as the following:
 "FLB" => Front Left Bongo
 "BRB" => Back Right Bongo
 "FRB" => Front Right Bongo
-"SEL" => Start/Pause Button
+"SPB" => Start/Pause Button
 "MIC" => Clap Microphone
 ```
 
