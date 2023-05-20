@@ -1,6 +1,6 @@
 # martillo
 
-Rust subcomponent of [DK-ASIC](https://github.com/johnDeSilencio/DK-BASIC)
+Rust subcomponent of [DK-BASIC](https://github.com/johnDeSilencio/DK-BASIC)
 for processing and applying the user config file `mappings.toml` at runtime
 
 ## `mappings.toml`
