@@ -2,7 +2,7 @@ use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 use std::process::ExitCode;
 
-static ABOUT_DESCRIPTION: &'static str = "\
+const ABOUT_DESCRIPTION: &'static str = "\
     Rust subcomponent for processing & validating DK-BASIC config files.\n\n\
     If this utility is being run on on DK-BASIC hardware,\n\
     it should be run with the \"apply\" parameter; else, it\n\
@@ -39,19 +39,20 @@ fn main() -> ExitCode {
 
     match &cli.command {
         Commands::Apply { file } => {
-            println!("I'm applying {:?}", file);
-            if validate(file) {
+            if let Some(bongo_settings) = parse(file) {
                 // Settings file exists and is valid; apply the settings
-                apply(file);
+                apply(&bongo_settings);
             } else {
-                // Settings files either doesn't exist or is invalid; use default settings
+                // Settings file either doesn't exist or is invalid; use default settings
+                apply(&DEFAULT_BONGO_SETTINGS);
             }
         }
         Commands::Validate { file } => {
-            if validate(file) {
-                println!("{:?} is valid!", file);
+            if let Some(_) = parse(file) {
+                // Notify the user that the settings file is valid
+                println!("[*] {:?} is valid", file);
             } else {
-                eprintln!("{:?} is invalid :(", file);
+                eprintln!("ERROR: {:?} is invalid", file);
 
                 // Return non-zero exit code to indicate the error
                 exit_code = ExitCode::from(1);
@@ -69,6 +70,12 @@ struct BongoSettings {
     freestyle_rhythms: Option<Vec<FreestyleRhythm>>,
 }
 
+const DEFAULT_BONGO_SETTINGS: BongoSettings = BongoSettings {
+    microphone_enabled: false,
+    debounce_beat: 100, // milliseconds
+    freestyle_rhythms: None,
+};
+
 struct FreestyleRhythm {
     character: char,
     beats: Vec<(BongoInput, Option<BeatDelay>)>,
@@ -85,8 +92,12 @@ enum BongoInput {
 
 struct BeatDelay(u8);
 
-fn validate(file: &PathBuf) -> bool {
-    file.exists() && file.to_str().unwrap() == "mappings.toml"
+fn parse(file: &PathBuf) -> Option<BongoSettings> {
+    return todo!();
+    file.exists() && file.to_str().unwrap() == "mappings.toml";
 }
 
-fn apply(_file: &PathBuf) {}
+fn apply(settings: &BongoSettings) {
+    println!("{:?}", settings.microphone_enabled);
+    println!("{:?}", settings.debounce_beat);
+}
