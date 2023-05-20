@@ -85,7 +85,7 @@ defined as the following:
 "MIC" => Clap Microphone
 ```
 
-__NOTE__: You must explicitly enable the clap microphone in the section `[[globals]]`
+__NOTE__: You must explicitly enable the clap microphone in the section `[global]`
 to use it in `[freestyle]` defined rhythms.
 
 ![DK Bongos input diagram](./doc/dk_inputs.png)
@@ -104,11 +104,11 @@ If `martillo` is unable to read `mappings.toml`, e.g. if the micro SD is not
 present, or if the contents of `mappings.toml` are invalid, it will use
 hard-coded defaults for the session.
 
-Both the `[[globals]]` and `[freestyle]` sections of `mappings.toml` are
+Both the `[global]` and `[freestyle]` sections of `mappings.toml` are
 may be empty, meaning the following is a valid `mappings.toml` file:
 
 ```toml
-[[globals]]
+[global]
 
 [freestyle]
 ```
