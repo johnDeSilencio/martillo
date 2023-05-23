@@ -76,13 +76,13 @@ timing requirements.
 If you orient the bongos so the Start/Pause button faces you, the bongo inputs are
 defined as the following:
 
-```none
-"BLB" => Back Left Bongo
-"FLB" => Front Left Bongo
-"BRB" => Back Right Bongo
-"FRB" => Front Right Bongo
-"SPB" => Start/Pause Button
-"MIC" => Clap Microphone
+```rust
+"BLB" => BackLeftBongo
+"FLB" => FrontLeftBongo
+"BRB" => BackRightBongo
+"FRB" => FrontRightBongo
+"SPB" => StartPauseButton
+"MIC" => ClapMicrophone
 ```
 
 __NOTE__: You must explicitly enable the clap microphone in the section `[global]`

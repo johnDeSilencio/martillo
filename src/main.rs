@@ -1,17 +1,12 @@
+mod constants;
+mod types;
+
+use crate::constants::*;
+use crate::types::*;
 use clap::{Parser, Subcommand};
-use serde::Deserialize;
 use std::fs;
 use std::path::PathBuf;
 use std::process::ExitCode;
-
-const ABOUT_DESCRIPTION: &'static str = "\
-    Rust subcomponent for processing & validating DK-BASIC config files.\n\n\
-    If this utility is being run on on DK-BASIC hardware,\n\
-    it should be run with the \"apply\" parameter; else, it\n\
-    should be run with the \"validate\" parameter.";
-
-const MIN_DEBOUNCE_TIME: u16 = 100;
-const MAX_DEBOUNCE_TIME: u16 = 5000;
 
 #[derive(Parser)]
 #[command(version)]
@@ -49,7 +44,7 @@ fn main() -> ExitCode {
                 apply(&bongo_settings);
             } else {
                 // Settings file either doesn't exist or is invalid; use default settings
-                apply(&DEFAULT_BONGO_SETTINGS);
+                apply(&BongoSettings::default());
             }
         }
         Commands::Validate { file } => {
@@ -70,111 +65,141 @@ fn main() -> ExitCode {
     exit_code
 }
 
-const DEFAULT_BONGO_SETTINGS: BongoSettings = BongoSettings {
-    global: GlobalConfig {
-        microphone_enabled: Some(false),
-        debounce_beat: Some(100), // milliseconds
-    },
-    freestyle: FreestyleConfig {
-        freestyle_rhythms: None,
-    },
-};
-
-#[derive(Deserialize, Debug)]
-struct FreestyleRhythm {
-    character: char,
-    beats: Vec<(BongoInput, Option<BeatDelay>)>,
-}
-
-#[derive(Deserialize, Debug)]
-enum BongoInput {
-    BLB,
-    FLB,
-    BRB,
-    FRB,
-    SPB,
-    MIC,
-}
-
-#[derive(Deserialize, Debug)]
-struct BeatDelay(u8);
-
-#[derive(Deserialize, Debug)]
-struct BongoSettings {
-    global: GlobalConfig,
-    freestyle: FreestyleConfig,
-}
-
-#[derive(Deserialize, Debug)]
-struct GlobalConfig {
-    microphone_enabled: Option<bool>,
-    debounce_beat: Option<u16>,
-}
-
-#[derive(Deserialize, Debug)]
-struct FreestyleConfig {
-    freestyle_rhythms: Option<Vec<FreestyleRhythm>>,
-}
-
 fn parse(file: &PathBuf) -> Option<BongoSettings> {
     let file_name = file.file_name()?;
 
+    // Make sure the file exists and is named "mappings.toml"
     if !file.exists() || file_name != "mappings.toml" {
         return None;
     }
 
     // Read in the data from the settings file
-    let settings_data = fs::read_to_string(file).ok()?;
+    let config_data = fs::read_to_string(file).ok()?;
 
-    println!("{:?}", settings_data);
+    // Parse the configuration from the data
+    let config: BongoSettingsConfig = toml::from_str(&config_data).ok()?;
 
-    // Parse the settings from the data
-    let mut parsed_settings: BongoSettings = toml::from_str(&settings_data).ok()?;
+    // Parse the global settings from the configuration
+    let global_settings = parse_global(&config)?;
 
-    println!("{:?}", parsed_settings);
-
-    if !validate(&mut parsed_settings) {
-        return None;
-    }
+    // Parse any freestyle rhythm settings from the configuration, if specified
+    let freestyle_settings = parse_freestyle(&config)?;
 
     // Return success with the parsed settings
-    Some(parsed_settings)
+    Some(BongoSettings {
+        global: global_settings,
+        freestyle: freestyle_settings,
+    })
 }
 
-fn validate(settings: &mut BongoSettings) -> bool {
-    // Validate the debounce interval if supplied by the user
-    if let Some(debounce_beat) = settings.global.debounce_beat {
-        if debounce_beat < 100 || debounce_beat > 5000 {
-            return false;
-        }
-    } else {
-        settings.global.debounce_beat = DEFAULT_BONGO_SETTINGS.global.debounce_beat;
-    }
+fn parse_freestyle(config: &BongoSettingsConfig) -> Option<FreestyleSettings> {
+    let mut settings = FreestyleSettings::default();
 
-    println!("What about here?");
+    if let Some(rhythms) = &config.freestyle {
+        let mut freestyle: Vec<FreestyleRhythm> = Vec::new();
 
-    // Validate any freestyle rhythms
-    if let Some(rhythms) = &settings.freestyle.freestyle_rhythms {
-        println!("I'm here!");
         for rhythm in rhythms.iter() {
-            println!("{:?}", rhythm.character);
+            let character = rhythm.character;
+            if !character.is_ascii() {
+                return None;
+            }
+
+            if rhythm.beats.is_empty() || rhythm.beats.len() != rhythm.delays.len() + 1 {
+                return None;
+            }
+
+            let mut valid = true;
+
+            let beats = rhythm
+                .beats
+                .iter()
+                .map(|beat| match beat.as_str() {
+                    "BLB" => BongoInput::BackLeftBongo,
+                    "FLB" => BongoInput::FrontLeftBongo,
+                    "BRB" => BongoInput::BackRightBongo,
+                    "FRB" => BongoInput::FrontRightBongo,
+                    "SPB" => BongoInput::StartPauseButton,
+                    "MIC" => {
+                        if !config.global.microphone.unwrap() {
+                            // User can only use the microphone in a rhythm if
+                            // it has been explicitly enabled in the config file
+                            valid = false;
+                        }
+
+                        BongoInput::ClapMicrophone
+                    }
+                    _ => {
+                        // Signal that the file is invalid to return early
+                        valid = false;
+
+                        // Return any input to satisfy closure
+                        // since we will return early anyways
+                        BongoInput::ClapMicrophone
+                    }
+                })
+                .collect::<Vec<BongoInput>>();
+
+            if !valid {
+                // Return early if there were any invalid beats
+                return None;
+            }
+
+            let mut delays = rhythm
+                .delays
+                .iter()
+                .map(|delay| {
+                    if *delay < MIN_DEBOUNCE_TIME || *delay > MAX_DEBOUNCE_TIME {
+                        valid = false;
+                        None
+                    } else {
+                        Some(BeatDelay(*delay))
+                    }
+                })
+                .collect::<Vec<Option<BeatDelay>>>();
+
+            if !valid {
+                // Return early if there were any invalid delays
+                return None;
+            }
+
+            // The last delay should be None because
+            // there is no delay after the last beat
+            delays.push(None);
+
+            let rhythm = beats
+                .iter()
+                .zip(delays.iter())
+                .map(|(beat, delay)| (beat.clone(), delay.clone()))
+                .collect::<Vec<(BongoInput, Option<BeatDelay>)>>();
+
+            freestyle.push(FreestyleRhythm {
+                character: character,
+                beats: rhythm,
+            });
         }
+
+        // Save parsed freestyle rhytms in the settings
+        settings.0 = Some(freestyle);
     }
 
-    // Supply clap microphone setting if not supplied by the user
-    if settings.global.microphone_enabled.is_none() {
-        settings.global.microphone_enabled = DEFAULT_BONGO_SETTINGS.global.microphone_enabled;
+    // Return struct with successfully parsed settings
+    Some(settings)
+}
+
+fn parse_global(config: &BongoSettingsConfig) -> Option<GlobalSettings> {
+    let settings = GlobalSettings::default();
+
+    // Validate the debounce interval if supplied by the user
+    if let Some(debounce) = config.global.debounce {
+        if debounce < 100 || debounce > 5000 {
+            return None;
+        }
     }
 
     // If we've made it here, the settings are valid
-    true
+    Some(settings)
 }
 
 fn apply(settings: &BongoSettings) {
-    println!("{:?}", settings.global.microphone_enabled);
-    println!("{:?}", settings.global.debounce_beat);
-    println!(
-        "freestyle enabled? {:?}",
-        settings.freestyle.freestyle_rhythms.is_some()
-    );
+    println!("{:?}", settings);
 }
