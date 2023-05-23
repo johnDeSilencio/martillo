@@ -2,9 +2,9 @@ use crate::constants::*;
 use serde::Deserialize;
 
 #[derive(Deserialize, Debug)]
-pub struct BongoSettingsConfig {
+pub struct BongoConfig {
     pub global: GlobalConfig,
-    pub freestyle: Option<Vec<FreestyleRhythmConfig>>,
+    pub freestyle: Option<Vec<FreestyleConfig>>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -14,7 +14,7 @@ pub struct GlobalConfig {
 }
 
 #[derive(Deserialize, Debug)]
-pub struct FreestyleRhythmConfig {
+pub struct FreestyleConfig {
     pub character: char,
     pub beats: Vec<String>,
     pub delays: Vec<u16>,

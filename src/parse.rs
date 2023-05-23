@@ -15,7 +15,7 @@ pub fn parse(file: &PathBuf) -> Option<BongoSettings> {
     let config_data = fs::read_to_string(file).ok()?;
 
     // Parse the configuration from the data
-    let config: BongoSettingsConfig = toml::from_str(&config_data).ok()?;
+    let config: BongoConfig = toml::from_str(&config_data).ok()?;
 
     // Parse the global settings from the configuration
     let global_settings = parse_global(&config)?;
@@ -30,7 +30,7 @@ pub fn parse(file: &PathBuf) -> Option<BongoSettings> {
     })
 }
 
-pub fn parse_global(config: &BongoSettingsConfig) -> Option<GlobalSettings> {
+pub fn parse_global(config: &BongoConfig) -> Option<GlobalSettings> {
     let settings = GlobalSettings::default();
 
     // Validate the debounce interval if supplied by the user
@@ -45,7 +45,7 @@ pub fn parse_global(config: &BongoSettingsConfig) -> Option<GlobalSettings> {
 }
 
 pub fn parse_freestyle(
-    config: &BongoSettingsConfig,
+    config: &BongoConfig,
     global_settings: &GlobalSettings,
 ) -> Option<FreestyleSettings> {
     let mut settings = FreestyleSettings::default();
@@ -139,4 +139,114 @@ pub fn parse_freestyle(
 
     // Return struct with successfully parsed settings
     Some(settings)
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::parse::*;
+
+    #[test]
+    fn test_parse_global_valid() {
+        let test_cases = [
+            BongoConfig {
+                global: GlobalConfig {
+                    debounce: None,
+                    microphone: None,
+                },
+                freestyle: None,
+            },
+            BongoConfig {
+                global: GlobalConfig {
+                    debounce: Some(MIN_DEBOUNCE_TIME),
+                    microphone: None,
+                },
+                freestyle: None,
+            },
+            BongoConfig {
+                global: GlobalConfig {
+                    debounce: Some(MAX_DEBOUNCE_TIME),
+                    microphone: None,
+                },
+                freestyle: None,
+            },
+            BongoConfig {
+                global: GlobalConfig {
+                    debounce: None,
+                    microphone: Some(false),
+                },
+                freestyle: None,
+            },
+            BongoConfig {
+                global: GlobalConfig {
+                    debounce: None,
+                    microphone: Some(true),
+                },
+                freestyle: None,
+            },
+        ];
+
+        for test_case in test_cases.iter() {
+            let settings = parse_global(test_case);
+
+            assert_eq!(true, settings.is_some());
+        }
+    }
+
+    #[test]
+    fn test_parse_global_invalid() {
+        let test_cases = [
+            BongoConfig {
+                global: GlobalConfig {
+                    debounce: Some(MIN_DEBOUNCE_TIME - 1),
+                    microphone: None,
+                },
+                freestyle: None,
+            },
+            BongoConfig {
+                global: GlobalConfig {
+                    debounce: Some(MAX_DEBOUNCE_TIME + 1),
+                    microphone: None,
+                },
+                freestyle: None,
+            },
+        ];
+
+        for test_case in test_cases.iter() {
+            let settings = parse_global(test_case);
+
+            assert_eq!(true, settings.is_none());
+        }
+    }
+
+    #[test]
+    fn test_parse_freestyle_valid() {
+        let test_cases = [
+            BongoConfig {
+                global: GlobalConfig {
+                    debounce: None,
+                    microphone: None,
+                },
+                freestyle: None,
+            },
+            BongoConfig {
+                global: GlobalConfig {
+                    debounce: None,
+                    microphone: None,
+                },
+                freestyle: Some(vec![]),
+            },
+        ];
+
+        for test_case in test_cases.iter() {
+            let settings = parse_freestyle(
+                test_case,
+                &GlobalSettings {
+                    debounce: 100,
+                    microphone: false,
+                },
+            );
+
+            assert_eq!(true, settings.is_some());
+        }
+    }
 }
