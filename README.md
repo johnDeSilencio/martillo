@@ -14,7 +14,12 @@ for the session. The following format is used for `mappings.toml`
 [global]
 # ...
 
-[freestyle]
+[[freestyle]]
+# ...
+
+[[freestyle]]
+# ...
+
 # ...
 ```
 
@@ -30,41 +35,39 @@ The following are settings that can be defined in the `[global]` section
 of `mappings.toml`:
 
 ```toml
-microphone-enabled = true  # enables the clap microphone (disabled by default)
-# OR...
-microphone-enabled = false # disables the clap microphone
-
-debounce-beat = 100  # don't detect beats faster than every 100ms (minimum)
+debounce = 10  # don't detect beats faster than every 10ms (minimum)
 # UP TO...
-debounce-beat = 5000 # don't detect beats faster than every 5000ms (maximum)
+debounce = 500 # don't detect beats faster than every 500ms (maximum)
+
+combo-window = 100  # consider two button presses separate beats at least 100ms apart (minimum)
+# UP TO...
+combo-window = 5000 # consider two button presses separate beats at least 5000ms apart (maximum)
 ```
 
 Example global section:
 
 ```toml
 [global]
-microphone-enabled = true # enabled so we can use it in the freestyle section
-debounce-beat = 200       # after each beat, don't detect another for 200ms
+debounce = 200       # after each beat, don't detect another for 200ms
+combo-window = 1000  # provide the user with a 1000ms window to perform combo beats
 # ...
 ```
 
-### `[freestyle]`
+### `[[freestyle]]`
 
-By default, if the `[freestyle]` section of `mappings.toml` is empty,
-DK-BASIC cannot be put into Freestyle Mode. If the `[freestyle]` section is
+By default, if the `[[freestyle]]` section of `mappings.toml` is empty,
+DK-BASIC cannot be put into Freestyle Mode. If the `[[freestyle]]` section is
 not empty and defines valid rhythms, DK-BASIC can be put into Freestyle Mode.
 In this mode, the user defined "rhythms", user-defined combinations of inputs,
 are used to map to keystrokes on the PS2 output interface.
 
-Consider the following `[freestyle]` section:
+Consider the following `[[freestyle]]` section:
 
 ```toml
-[freestyle]
-rhythm1 = [
-    "!",
-    ["BRB", "FRB", "BRB"],
-    [800, 400]
-]
+[[freestyle]]
+character = "!"
+beats = ["BRB", "FRB", "BRB"]
+delays = [800, 400]
 ```
 
 Here, we define the following mapping: "If I hit the Back Right Bongo (BRB), then
@@ -85,12 +88,9 @@ defined as the following:
 "MIC" => ClapMicrophone
 ```
 
-__NOTE__: You must explicitly enable the clap microphone in the section `[global]`
-to use it in `[freestyle]` defined rhythms.
-
 ![DK Bongos input diagram](./doc/dk_inputs.png)
 
-### `[freestyle]` limitations
+### `[[freestyle]]` limitations
 
 The `[freestyle]` section of a  valid `mappings.toml` file may have
 the following:
@@ -104,13 +104,13 @@ If `martillo` is unable to read `mappings.toml`, e.g. if the micro SD is not
 present, or if the contents of `mappings.toml` are invalid, it will use
 hard-coded defaults for the session.
 
-Both the `[global]` and `[freestyle]` sections of `mappings.toml` are
+Both the `[global]` and `[[freestyle]]` sections of `mappings.toml` are
 may be empty, meaning the following is a valid `mappings.toml` file:
 
 ```toml
 [global]
 
-[freestyle]
+[[freestyle]]
 ```
 
 ### Validating `mappings.toml`
