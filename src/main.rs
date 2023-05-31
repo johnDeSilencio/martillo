@@ -44,7 +44,7 @@ fn main_body(args: Args) -> ExitCode {
 
     match &args.command {
         Commands::Apply { file } => {
-            if let Some(bongo_settings) = parse(file) {
+            if let Ok(bongo_settings) = parse(file) {
                 // Settings file exists and is valid; apply the settings
                 apply(&bongo_settings);
             } else {
@@ -53,7 +53,7 @@ fn main_body(args: Args) -> ExitCode {
             }
         }
         Commands::Validate { file } => {
-            if let Some(_) = parse(file) {
+            if parse(file).is_ok() {
                 // Notify the user that the settings file is valid
                 println!("[*] {:?} is valid", file);
             } else {
