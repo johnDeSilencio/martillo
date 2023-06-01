@@ -1,0 +1,7 @@
+[global]
+debounce = 100
+
+[[freestyle]]
+character = "@"
+beats = ["SPB"]
+delays = []

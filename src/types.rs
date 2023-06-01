@@ -1,6 +1,30 @@
 use crate::constants::*;
+use clap::{Parser, Subcommand};
 use serde::Deserialize;
+use std::path::PathBuf;
 use thiserror::Error;
+
+#[derive(Parser)]
+#[command(version)]
+#[command(about = ABOUT_DESCRIPTION, long_about=None)]
+pub struct Args {
+    #[command(subcommand)]
+    pub command: Commands,
+}
+
+#[derive(Subcommand)]
+pub enum Commands {
+    #[command(about = "Apply the settings in mappings.toml (only for use on DK-BASIC hardware)")]
+    Apply {
+        #[arg(help = "The mappings.toml file to apply")]
+        file: PathBuf,
+    }, // the mappings.toml file
+    #[command(about = "Validate the mappings.toml file")]
+    Validate {
+        #[arg(help = "The mappings.toml file to validate")]
+        file: PathBuf,
+    }, // the mappings.toml file
+}
 
 #[derive(Error, Debug)]
 pub enum MappingsParseError {

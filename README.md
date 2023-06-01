@@ -104,13 +104,13 @@ If `martillo` is unable to read `mappings.toml`, e.g. if the micro SD is not
 present, or if the contents of `mappings.toml` are invalid, it will use
 hard-coded defaults for the session.
 
-Both the `[global]` and `[[freestyle]]` sections of `mappings.toml` are
-may be empty, meaning the following is a valid `mappings.toml` file:
+The `[global]` section of `mappings.toml` may be empty, and `[[freestyle]]` headers
+should only be present if there is at least one freestyle rhythm defined, meaning
+the following is a valid `mappings.toml` file:
 
 ```toml
 [global]
 
-[[freestyle]]
 ```
 
 ### Validating `mappings.toml`

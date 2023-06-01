@@ -1,0 +1,11 @@
+[global]
+
+[[freestyle]]
+character = "$"
+beats = ["FRB", "BRB", "BLB"]
+delays = [200, 4999]
+
+[[freestyle]]
+character = "#"
+beats = ["FRB", "BRB", "FLB"]
+delays = [800, 1600]

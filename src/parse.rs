@@ -225,12 +225,59 @@ mod tests {
                 beats: vec!["MIC".to_string()],
                 delays: vec![],
             }],
+            vec![FreestyleConfig {
+                character: '$',
+                beats: vec!["FRB".to_string(), "BRB".to_string(), "FRB".to_string()],
+                delays: vec![MIN_DEBOUNCE_TIME+1, MIN_DEBOUNCE_TIME+1],
+            }],
         ];
 
         for test_case in test_cases.iter() {
             let settings = parse_freestyle(test_case.to_vec());
 
             assert!(settings.is_ok());
+        }
+    }
+
+    #[test]
+    fn test_parse_freestyle_invalid() {
+        let test_cases = [
+            vec![FreestyleConfig {
+                character: '🐒', // character must be ASCII
+                beats: vec!["MIC".to_string()],
+                delays: vec![],
+            }],
+            vec![FreestyleConfig {
+                character: '$',
+                beats: vec![], // there must be at least one beat in rhythm
+                delays: vec![],
+            }],
+            vec![FreestyleConfig {
+                character: '$',
+                beats: vec!["MIC".to_string()],
+                delays: vec![MIN_DEBOUNCE_TIME], // there must be one less fewer delays than beats
+            }],
+            vec![FreestyleConfig {
+                character: '$',
+                beats: vec!["MIC".to_string(), "BRB".to_string()],
+                delays: vec![], // there must be no less than one fewer delays than beats
+            }],
+            vec![FreestyleConfig {
+                character: '$',
+                beats: vec!["this is an invalid beat".to_string()],
+                delays: vec![], // ^^ must be either "BRB", "BLB", "FRB", "FLB", "SPB", or "MIC"
+            }],
+            vec![FreestyleConfig {
+                character: '$',
+                beats: vec!["MIC".to_string(), "BRB".to_string()],
+                delays: vec![MIN_DEBOUNCE_TIME - 1], // delays must be greater than the debounce time
+            }],
+        ];
+
+        for test_case in test_cases.iter() {
+            let settings = parse_freestyle(test_case.to_vec());
+
+            assert!(settings.is_err());
         }
     }
 }
