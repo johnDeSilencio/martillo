@@ -55,4 +55,24 @@ mod tests {
             assert!(result.is_ok());
         }
     }
+
+    #[test]
+    fn test_entry_invalid_mappings() {
+        let test_cases = [
+            Commands::Validate {
+                file: PathBuf::from("./testdata/invalid1/anyotherfilename.toml"),
+            },
+            Commands::Validate {
+                file: PathBuf::from("./testdata/invalid2/mappings.toml"),
+            },
+            Commands::Validate {
+                file: PathBuf::from("./testdata/invalid2/mappings.toml"),
+            },
+        ];
+
+        for test_case in test_cases.iter() {
+            let result = entry(test_case);
+            assert!(result.is_err());
+        }
+    }
 }
