@@ -18,7 +18,9 @@ pub fn parse(file: &PathBuf) -> Result<BongoSettings, MappingsParseError> {
         .ok_or(MappingsParseError::InvalidFilename)?;
 
     // Make sure the file exists and is named "mappings.toml"
-    if !file.exists() || file_name != "mappings.toml" {}
+    if !file.exists() || file_name != "mappings.toml" {
+        return Err(MappingsParseError::CannotReadFile(file_name.to_owned()));
+    }
 
     // Read in the data from the settings file
     let config_data = fs::read_to_string(file)
@@ -228,7 +230,7 @@ mod tests {
             vec![FreestyleConfig {
                 character: '$',
                 beats: vec!["FRB".to_string(), "BRB".to_string(), "FRB".to_string()],
-                delays: vec![MIN_DEBOUNCE_TIME+1, MIN_DEBOUNCE_TIME+1],
+                delays: vec![MIN_DEBOUNCE_TIME + 1, MIN_DEBOUNCE_TIME + 1],
             }],
         ];
 
