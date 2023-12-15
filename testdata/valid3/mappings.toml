@@ -9,3 +9,8 @@ delays = [200, 4999]
 character = "#"
 beats = ["FRB", "BRB", "FLB"]
 delays = [800, 1600]
+
+[[freestyle]]
+character = "%"
+beats = ["FLB+FRB", "BRB", "FLB+BLB"]
+delays = [1600, 400]
